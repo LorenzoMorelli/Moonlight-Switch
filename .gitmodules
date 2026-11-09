@@ -13,3 +13,12 @@
 [submodule "extern/mdns"]
 	path = extern/mdns
 	url = https://github.com/mjansson/mdns.git
+[submodule "extern/lwip"]
+	path = extern/lwip
+	url = https://github.com/lwip-tcpip/lwip.git
+[submodule "extern/wireguard-lwip"]
+	path = extern/wireguard-lwip
+	url = https://github.com/smartalock/wireguard-lwip.git
+[submodule "extern/nghttp2"]
+	path = extern/nghttp2
+	url = https://github.com/nghttp2/nghttp2.git
