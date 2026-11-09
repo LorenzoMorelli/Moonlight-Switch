@@ -27,10 +27,13 @@ static pthread_mutex_t g_init_mu = PTHREAD_MUTEX_INITIALIZER;
 static bool g_lwip_started;
 static pthread_cond_t g_init_cv = PTHREAD_COND_INITIALIZER;
 static bool g_init_done;
+static pthread_t g_tcpip_thread;
 
+/* runs on the tcpip thread */
 static void tcpip_ready(void *arg) {
     (void)arg;
     pthread_mutex_lock(&g_init_mu);
+    g_tcpip_thread = pthread_self();
     g_init_done = true;
     pthread_cond_signal(&g_init_cv);
     pthread_mutex_unlock(&g_init_mu);
@@ -68,6 +71,24 @@ int tsnet_lwip_start(void) {
     tcpip_callback(boost_tcpip_thread, NULL);
     TSNET_LOGI("lwip: tcpip thread started");
     return TSNET_OK;
+}
+
+/* runs on the tcpip thread (via tcpip_callback), with the core lock held */
+static void exit_tcpip_thread(void *arg) {
+    (void)arg;
+    UNLOCK_TCPIP_CORE();
+    pthread_exit(NULL);
+}
+
+void tsnet_lwip_shutdown(void) {
+    pthread_mutex_lock(&g_init_mu);
+    bool started = g_lwip_started && g_init_done;
+    g_lwip_started = false;
+    pthread_mutex_unlock(&g_init_mu);
+    if (!started) return;
+    if (tcpip_callback(exit_tcpip_thread, NULL) != ERR_OK) return;
+    pthread_join(g_tcpip_thread, NULL);
+    TSNET_LOGI("lwip: tcpip thread stopped");
 }
 
 /* Hand a fully formed IP packet to the tunnel transport. Runs on the

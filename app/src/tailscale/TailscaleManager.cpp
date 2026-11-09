@@ -194,6 +194,7 @@ void TailscaleManager::stop() {
 void TailscaleManager::shutdown() {
     m_shuttingDown = true;
     stop();
+    tsnet_shutdown();
 }
 
 void TailscaleManager::logout() {
