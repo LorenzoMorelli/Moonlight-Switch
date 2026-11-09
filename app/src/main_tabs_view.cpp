@@ -11,6 +11,9 @@
 #include "add_host_tab.hpp"
 #include "host_tab.hpp"
 #include "settings_tab.hpp"
+#ifdef __SWITCH__
+#include "tailscale/tailscale_tab.hpp"
+#endif
 
 MainTabs::MainTabs() {
     favoriteTab = new FavoriteTab();
@@ -61,6 +64,9 @@ void MainTabs::refillTabs(bool keepFocus) {
         addSeparator();
 
     addTab("tabs/add_host"_i18n, AddHostTab::create);
+#ifdef __SWITCH__
+    addTab("tailscale/tab"_i18n, TailscaleTab::create);
+#endif
     addTab("tabs/settings"_i18n, SettingsTab::create);
     addSeparator();
     addTab("tabs/about"_i18n, AboutTab::create);

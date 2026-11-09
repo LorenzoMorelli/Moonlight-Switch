@@ -23,6 +23,9 @@
 #include "settings_tab.hpp"
 
 #include "DiscoverManager.hpp"
+#ifdef __SWITCH__
+#include "tailscale/TailscaleManager.hpp"
+#endif
 #include "MoonlightSession.hpp"
 #include "SwitchMoonlightSessionDecoderAndRenderProvider.hpp"
 
@@ -90,6 +93,27 @@ int main(int argc, char* argv[]) {
     // when doing software decoding
     svcSetThreadPriority(CUR_THREAD_HANDLE, 0x20);
 
+    // With Tailscale, all streaming traffic arrives in bursts on a single
+    // UDP socket, which overruns the default 42 KB receive buffer and drops
+    // packets. Re-init the socket service with a larger buffer; no socket is
+    // open yet at this point. Keep 12 sessions even in applet mode: tsnet
+    // threads stay blocked in recv on two of them. On failure, fall back to
+    // borealis' userAppInit settings.
+    if (TailscaleManager::willAutoStart("sdmc:/switch/Moonlight-Switch")) {
+        AppletType at = appletGetAppletType();
+        bool fullApp = at == AppletType_Application ||
+                       at == AppletType_SystemApplication;
+        SocketInitConfig scfg = *socketGetDefaultInitConfig();
+        scfg.num_bsd_sessions = fullApp ? 12 : 2;
+        scfg.sb_efficiency = fullApp ? 8 : 1;
+        SocketInitConfig big = scfg;
+        big.num_bsd_sessions = 12;
+        big.udp_rx_buf_size = 1 * 1024 * 1024;
+        socketExit();
+        if (R_FAILED(socketInitialize(&big)))
+            socketInitialize(&scfg);
+    }
+
     // auto at = appletGetAppletType();
     // g_application_mode = at == AppletType_Application || at == AppletType_SystemApplication;
 
@@ -123,6 +147,16 @@ int main(int argc, char* argv[]) {
     Settings::instance().set_working_dir(home);
     Settings::instance().set_launch_path(argc > 0 ? argv[0] : "");
     brls::Logger::info("Working dir, {}", home);
+
+#ifdef __SWITCH__
+    TailscaleManager::instance().init();
+
+    // Stop Tailscale before borealis destroys its views and platform: tsnet
+    // worker threads and callbacks must not outlive the UI.
+    brls::Application::getExitEvent()->subscribe([] {
+        TailscaleManager::instance().shutdown();
+    });
+#endif
 
     // Have the application register an action on every activity that will quit
     // when you press BUTTON_START
@@ -159,6 +193,12 @@ int main(int argc, char* argv[]) {
     // Run the app
     while (brls::Application::mainLoop())
         ;
+
+#ifdef __SWITCH__
+    // no-op if the exit event already ran; tsnet threads must be joined
+    // before libnx tears down the socket service
+    TailscaleManager::instance().shutdown();
+#endif
 
     // Exit
 #if defined(PLATFORM_TVOS)

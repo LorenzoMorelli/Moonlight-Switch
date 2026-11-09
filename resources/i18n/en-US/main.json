@@ -183,5 +183,29 @@
         "favorites": "Favorites",
         "settings": "Settings"
     },
-    "title": "Moonlight"
+    "title": "Moonlight",
+    "tailscale": {
+        "status": "Tailscale",
+        "enabled": "Enabled",
+        "not_logged_in": "Not logged in — use 'Login with auth key' or 'Login via browser' first",
+        "login_header": "Login",
+        "server_url": "Control server URL",
+        "login_key": "Login with auth key",
+        "login_url": "Login via browser URL",
+        "login_url_hint": "Waiting for the login URL from the control server...",
+        "login_url_generating": "Generating login link...",
+        "authurl_dialog": "Visit this URL from another device to authorize the Switch:\n\n{}",
+        "logout": "Logout",
+        "logout_confirm": "Remove this device's Tailscale keys? You will need to log in again.",
+        "peers": "Devices in your tailnet",
+        "diagnostics": "Diagnostics",
+        "add_host_hint": "Peer IP {} — add it from the 'Add Host' tab",
+        "state_stopped": "Disabled",
+        "state_starting": "Connecting...",
+        "state_login": "Login required",
+        "state_auth": "Authenticating...",
+        "state_running": "Connected",
+        "state_error": "Error",
+        "tab": "Tailscale"
+    }
 }

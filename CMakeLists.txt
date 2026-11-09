@@ -185,7 +185,11 @@ elseif (PLATFORM_SWITCH)
     list(APPEND MAIN_SRC
             ${BOREALIS_LIBRARY}/lib/platforms/switch/switch_wrapper.c
             app/src/switch/wrapper.c
+            app/src/tailscale/TailscaleManager.cpp
+            app/src/tailscale/tailscale_tab.cpp
             )
+    # Embedded Tailscale client (tsnet/)
+    add_subdirectory(tsnet)
 elseif (PLATFORM_PSV)
     add_definitions(-D__psp2__ -D__PSV__)
 elseif (PLATFORM_ANDROID)
@@ -393,6 +397,10 @@ if(PLATFORM_SWITCH)
     target_include_directories(${PROJECT_NAME} PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/lib/switch/include
     )
+    # socket interception: every socket symbol reference in the final link
+    # (prebuilt libcurl.a included) routes through the tsnet shim
+    target_link_libraries(${PROJECT_NAME} PRIVATE tsnet)
+    target_link_options(${PROJECT_NAME} PRIVATE ${TSNET_WRAP_LDFLAGS})
 endif ()
 
 set(MOONLIGHT_APP_SDL_LIBS)

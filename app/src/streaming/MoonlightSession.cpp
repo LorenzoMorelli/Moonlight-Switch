@@ -6,6 +6,10 @@
 #include "borealis.hpp"
 #include <string.h>
 
+#ifdef __SWITCH__
+#include "tsnet/tsnet.h"
+#endif
+
 #if defined(PLATFORM_IOS) || defined(PLATFORM_VISIONOS)
 extern void getWindowSize(int* w, int* h);
 #endif
@@ -279,6 +283,16 @@ void MoonlightSession::start(ServerCallback<bool> callback, bool is_sunshine) {
     m_config.fps = Settings::instance().fps();
     m_config.audioConfiguration = AUDIO_CONFIGURATION_STEREO;
     m_config.packetSize = 1392;
+#ifdef __SWITCH__
+    // Through the Tailscale tunnel (tailnet IP, or a LAN host reached via a
+    // subnet route) a 1392-byte packet plus WireGuard overhead exceeds the
+    // 1280 tunnel MTU, so use a size that fits.
+    if (tsnet_dest_is_tunnel(m_address.c_str())) {
+        m_config.packetSize = 1024;
+        brls::Logger::info("Moonlight: tunneled host {}, packetSize 1024",
+                           m_address);
+    }
+#endif
     m_config.streamingRemotely = STREAM_CFG_AUTO;
     m_config.bitrate = Settings::instance().bitrate();
     m_config.encryptionFlags = m_is_sunshine ? ENCFLG_ALL : ENCFLG_VIDEO;

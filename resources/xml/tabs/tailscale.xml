@@ -1,0 +1,71 @@
+<brls:Box
+    width="auto"
+    height="auto">
+
+    <brls:ScrollingFrame
+        width="auto"
+        height="auto"
+        axis="column"
+        alignItems="stretch"
+        grow="1.0" >
+
+        <brls:Box
+            width="10000"
+            height="auto"
+            axis="column"
+            alignItems="stretch"
+            paddingTop="@style/brls/tab_details/padding_top"
+            paddingRight="@style/brls/tab_details/padding_right"
+            paddingBottom="@style/brls/tab_details/padding_bottom"
+            paddingLeft="@style/brls/tab_details/padding_left">
+
+            <brls:Header
+                id="status_header"
+                title="@i18n/tailscale/status"
+                subtitle=""/>
+
+            <brls:BooleanCell
+                id="enabled"/>
+
+            <brls:Header
+                title="@i18n/tailscale/login_header"
+                paddingTop="30"/>
+
+            <brls:InputCell
+                id="server_url"/>
+
+            <brls:DetailCell
+                id="login_key"/>
+
+            <brls:DetailCell
+                id="login_url"/>
+
+            <brls:DetailCell
+                id="logout"/>
+
+            <brls:Header
+                id="peers_header"
+                title="@i18n/tailscale/peers"
+                paddingTop="30"/>
+
+            <brls:Box
+                id="peers_box"
+                width="auto"
+                height="auto"
+                axis="column"
+                alignItems="stretch"/>
+
+            <brls:Header
+                title="@i18n/tailscale/diagnostics"
+                paddingTop="30"/>
+
+            <brls:Label
+                id="diag_label"
+                width="auto"
+                height="auto"
+                fontSize="18"
+                text=""/>
+
+        </brls:Box>
+    </brls:ScrollingFrame>
+</brls:Box>
