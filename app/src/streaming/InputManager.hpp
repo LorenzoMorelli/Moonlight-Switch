@@ -57,6 +57,7 @@ class MoonlightInputManager : public Singleton<MoonlightInputManager> {
     void updateTouchScreenPanDelta(brls::PanGestureStatus panStatus);
     void reloadButtonMappingLayout();
     void setInputEnabled(bool enabled) { inputEnabled = enabled; }
+    void resetControllers() { announcedControllersCount = -1; }
     static void leftMouseClick();
     static void rightMouseClick();
 
@@ -69,6 +70,7 @@ class MoonlightInputManager : public Singleton<MoonlightInputManager> {
     brls::Point desktopMouseRemainder = {0, 0};
     bool inputDropped = false;
     bool inputEnabled = true;
+    int announcedControllersCount = -1;
 
     brls::ControllerState mapController(brls::ControllerState controller);
     static short glfwKeyToVKKey(brls::BrlsKeyboardScancode key);
