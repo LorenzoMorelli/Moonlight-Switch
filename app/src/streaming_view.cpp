@@ -69,6 +69,7 @@ void overrideButtonsIfNeeded(bool value) {
 
 StreamingView::StreamingView(const Host& host, const AppInfo& app) : host(host), app(app) {
     Application::getPlatform()->disableScreenDimming(true);
+    MoonlightInputManager::instance().resetControllers();
 
     setFocusable(true);
     setHideHighlight(true);

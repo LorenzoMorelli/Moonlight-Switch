@@ -367,17 +367,11 @@ GamepadState MoonlightInputManager::getControllerState(int controllerNum,
     SET_GAME_PAD_STATE(LEFT_FLAG, brls::BUTTON_LEFT);
     SET_GAME_PAD_STATE(RIGHT_FLAG, brls::BUTTON_RIGHT);
 
-#ifdef __SWITCH__
-    SET_GAME_PAD_STATE(A_FLAG, b);
-    SET_GAME_PAD_STATE(B_FLAG, a);
-    SET_GAME_PAD_STATE(X_FLAG, y);
-    SET_GAME_PAD_STATE(Y_FLAG, x);
-#else
+    // Nintendo-type controllers map A_FLAG to the right button, so send by label
     SET_GAME_PAD_STATE(A_FLAG, a);
     SET_GAME_PAD_STATE(B_FLAG, b);
     SET_GAME_PAD_STATE(X_FLAG, x);
     SET_GAME_PAD_STATE(Y_FLAG, y);
-#endif
 
     SET_GAME_PAD_STATE(BACK_FLAG, brls::BUTTON_BACK);
     SET_GAME_PAD_STATE(PLAY_FLAG, brls::BUTTON_START);
@@ -405,8 +399,6 @@ GamepadState MoonlightInputManager::getControllerState(int controllerNum,
 }
 
 void MoonlightInputManager::handleControllers(bool specialKey) {
-    static int lastControllerCount = 0;
-
     auto controllersCount = brls::Application::getPlatform()
                             ->getInputManager()
                             ->getControllersConnectedCount();
@@ -418,20 +410,27 @@ void MoonlightInputManager::handleControllers(bool specialKey) {
 
     short mappedControllersCount = controllersToMap();
 
+    if (announcedControllersCount != controllersCount) {
+        announcedControllersCount = controllersCount;
+
+        for (int i = 0; i < controllersCount; i++) {
+            Logger::debug("StreamingView: send features message for controller #{}", i);
+#ifdef __SWITCH__
+            LiSendControllerArrivalEvent(i, mappedControllersCount, LI_CTYPE_NINTENDO,
+#else
+            LiSendControllerArrivalEvent(i, mappedControllersCount, LI_CTYPE_UNKNOWN,
+#endif
+                A_FLAG | B_FLAG | X_FLAG | Y_FLAG | UP_FLAG | DOWN_FLAG | LEFT_FLAG | RIGHT_FLAG |
+                LB_FLAG | RB_FLAG | PLAY_FLAG | BACK_FLAG | LS_CLK_FLAG | RS_CLK_FLAG | SPECIAL_FLAG,
+                LI_CCAP_RUMBLE | LI_CCAP_ACCEL | LI_CCAP_GYRO);
+        }
+    }
+
     for (int i = 0; i < controllersCount; i++) {
         GamepadState gamepadState = getControllerState(i, specialKey);
 
         if (!gamepadState.is_equal(lastGamepadStates[i])) {
             lastGamepadStates[i] = gamepadState;
-
-            if (lastControllerCount != controllersCount) {
-                lastControllerCount = controllersCount;
-                
-                for (int i = 0; i < controllersCount; i++) {
-                    Logger::debug("StreamingView: send features message for controller #{}", i);
-                    LiSendControllerArrivalEvent(i, mappedControllersCount, LI_CTYPE_UNKNOWN, 0, LI_CCAP_RUMBLE | LI_CCAP_ACCEL | LI_CCAP_GYRO);
-                }
-            }
 
             if (LiSendMultiControllerEvent(
                     i, mappedControllersCount, gamepadState.buttonFlags,
