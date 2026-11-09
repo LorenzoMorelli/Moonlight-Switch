@@ -10,6 +10,9 @@
 #include "app_list_view.hpp"
 #include "helper.hpp"
 #include "main_tabs_view.hpp"
+#ifdef __SWITCH__
+#include "tailscale/TailscaleManager.hpp"
+#endif
 
 using namespace brls::literals;
 
@@ -31,7 +34,22 @@ HostTab::HostTab(const Host& host) : host(host) {
     remove->setText("common/remove"_i18n);
     remove->title->setTextColor(RGB(229, 57, 53));
 
+#ifdef __SWITCH__
+    // Probes over the tailnet fail until the tunnel is up and the first
+    // WireGuard handshake with the peer is done (the probe timeout is 1s):
+    // retry a few times instead of requiring the user to re-open the tab.
+    if (TailscaleManager::instance().tunnelUp()) tunnelRetries = 2;
+#endif
+
     reloadHost();
+
+#ifdef __SWITCH__
+    tunnelUpSubscription =
+        TailscaleManager::instance().getTunnelUpEvent()->subscribe([this] {
+            tunnelRetries = 5;
+            if (state == UNAVAILABLE) reloadHost();
+        });
+#endif
 
     registerAction("host/rename"_i18n, ControllerButton::BUTTON_START,
                    [this](View* view) {
@@ -117,6 +135,13 @@ HostTab::HostTab(const Host& host) : host(host) {
     });
 }
 
+HostTab::~HostTab() {
+#ifdef __SWITCH__
+    TailscaleManager::instance().getTunnelUpEvent()->unsubscribe(
+        tunnelUpSubscription);
+#endif
+}
+
 void HostTab::reloadHost() {
     state = FETCHING;
     header->setTitle("host/status"_i18n + ": " + "host/fetching"_i18n);
@@ -137,11 +162,24 @@ void HostTab::reloadHost() {
                                         : connectedAddress);
                 connect->setText("host/connect"_i18n);
                 state = AVAILABLE;
+#ifdef __SWITCH__
+                tunnelRetries = 0;
+#endif
             } else {
                 header->setTitle("host/status"_i18n + ": " +
                                  "host/unable"_i18n);
                 connect->setText("host/wake_up"_i18n);
                 state = UNAVAILABLE;
+#ifdef __SWITCH__
+                if (tunnelRetries > 0) {
+                    tunnelRetries--;
+                    ASYNC_RETAIN
+                    brls::delay(2000, [ASYNC_TOKEN] {
+                        ASYNC_RELEASE
+                        if (state == UNAVAILABLE) reloadHost();
+                    });
+                }
+#endif
             }
         });
 }

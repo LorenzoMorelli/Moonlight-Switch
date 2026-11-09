@@ -164,10 +164,7 @@ void TailscaleManager::start(const std::string& authKey) {
     };
     ev.on_peers = [](void*) {
         if (TailscaleManager::instance().shuttingDown()) return;
-        brls::sync([] {
-            auto& self = TailscaleManager::instance();
-            if (self.onStateChanged) self.onStateChanged();
-        });
+        brls::sync([] { TailscaleManager::instance()._peersEvent(); });
     };
 
     // crash-loop guard, removed in _stateEvent() once RUNNING
@@ -190,6 +187,7 @@ void TailscaleManager::stop() {
     if (!m_running) return;
     tsnet_stop();
     m_running = false;
+    m_tunnelUp = false;
     if (!m_shuttingDown && onStateChanged) onStateChanged();
 }
 
@@ -265,6 +263,17 @@ void TailscaleManager::_stateEvent(const std::string& detail) {
             m_enabled = true;
             save();
         }
+    } else {
+        m_tunnelUp = false;
+    }
+    if (onStateChanged) onStateChanged();
+}
+
+void TailscaleManager::_peersEvent() {
+    // Peers are reported once the data plane is up, unlike the RUNNING state
+    if (m_running && !m_tunnelUp) {
+        m_tunnelUp = true;
+        m_tunnelUpEvent.fire();
     }
     if (onStateChanged) onStateChanged();
 }

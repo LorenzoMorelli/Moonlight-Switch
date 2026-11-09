@@ -8,6 +8,7 @@
 #pragma once
 
 #include <Singleton.hpp>
+#include <borealis/core/event.hpp>
 #include <atomic>
 #include <functional>
 #include <string>
@@ -57,11 +58,16 @@ class TailscaleManager : public Singleton<TailscaleManager> {
     // UI callbacks (invoked on the borealis main thread via brls::sync)
     std::function<void(const std::string& url)> onAuthUrl;
     std::function<void()> onStateChanged;
+    // Fired on the UI thread each time the data plane comes up, so
+    // views that probe tailnet hosts can retry without user interaction.
+    brls::Event<>* getTunnelUpEvent() { return &m_tunnelUpEvent; }
+    [[nodiscard]] bool tunnelUp() const { return m_tunnelUp; }
 
     [[nodiscard]] std::string stateDir() const { return m_state_dir; }
 
     // internal event sinks (invoked from tsnet callbacks on the UI thread)
     void _stateEvent(const std::string& detail);
+    void _peersEvent();
 
     // tsnet callbacks run on worker threads and post to the UI via
     // brls::sync; once shutdown() starts they become no-ops so no task runs
@@ -81,4 +87,6 @@ class TailscaleManager : public Singleton<TailscaleManager> {
     bool m_running = false;
     std::atomic<bool> m_shuttingDown{false};
     std::string m_state_detail;
+    bool m_tunnelUp = false;
+    brls::Event<> m_tunnelUpEvent;
 };

@@ -23,6 +23,9 @@
 #include "errors.h"
 #include "http.h"
 #include <Limelight.h>
+#ifdef __SWITCH__
+#include "tsnet/tsnet.h"
+#endif
 #include <borealis/core/logger.hpp>
 #include <errno.h>
 #include <stdbool.h>
@@ -83,7 +86,14 @@ static int load_serverinfo(PSERVER_DATA server, bool https) {
 
     Data data;
 
-    if (http_request(url, &data, HTTPRequestTimeoutLow) != GS_OK) {
+    HTTPRequestTimeout timeout = HTTPRequestTimeoutLow;
+#ifdef __SWITCH__
+    // A TLS handshake through the Tailscale tunnel can take longer than 1s
+    if (tsnet_dest_is_tunnel(server->serverInfo.address))
+        timeout = HTTPRequestTimeoutMedium;
+#endif
+
+    if (http_request(url, &data, timeout) != GS_OK) {
         ret = GS_IO_ERROR;
         goto cleanup;
     }

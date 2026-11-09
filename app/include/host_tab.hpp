@@ -16,6 +16,7 @@ enum HostState { FETCHING, AVAILABLE, UNAVAILABLE };
 class HostTab : public brls::Box {
   public:
     HostTab(const Host& host);
+    ~HostTab() override;
     void reloadHost();
 
     BRLS_BIND(brls::DetailCell, connect, "connect");
@@ -27,4 +28,8 @@ class HostTab : public brls::Box {
     HostState state = HostState::FETCHING;
     uint64_t wakeRequestGeneration = 0;
     uint64_t canceledWakeRequestGeneration = 0;
+#ifdef __SWITCH__
+    brls::Event<>::Subscription tunnelUpSubscription;
+    int tunnelRetries = 0;
+#endif
 };
