@@ -219,6 +219,11 @@ void tsnet_stop(void) {
     g.self_ip4[0] = '\0';
 }
 
+void tsnet_shutdown(void) {
+    tsnet_stop();
+    tsnet_lwip_shutdown();
+}
+
 tsnet_state tsnet_get_state(void) { return g.state; }
 
 int tsnet_get_peers(tsnet_peer_info *out, int max) {

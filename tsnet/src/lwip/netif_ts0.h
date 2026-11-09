@@ -25,6 +25,10 @@ typedef void (*tsnet_ts0_output_fn)(const uint8_t *buf, uint16_t len,
 /* Start the lwIP stack (tcpip thread). Idempotent, thread-safe. */
 int tsnet_lwip_start(void);
 
+/* Stop and join the tcpip thread. lwIP cannot be restarted afterwards: call
+ * only at process exit, after tsnet_stop(). */
+void tsnet_lwip_shutdown(void);
+
 /* Bring up ts0 with an IPv4 address "a.b.c.d/prefix" and optionally an
  * IPv6 address "hex:.../prefix" (NULL to skip). output may be NULL while
  * there is no data plane yet (packets to non-local destinations are

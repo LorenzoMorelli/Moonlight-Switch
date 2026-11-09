@@ -84,6 +84,11 @@ int tsnet_start(const tsnet_config *cfg, const tsnet_events *ev);
 /* Graceful stop (closes control + DERP, tears down peers). Blocking. */
 void tsnet_stop(void);
 
+/* Stop, then join the network stack thread, which tsnet_stop() keeps for a
+ * later restart. Call once at process exit: no thread may outlive the
+ * program when it returns to the homebrew loader. */
+void tsnet_shutdown(void);
+
 tsnet_state tsnet_get_state(void);
 
 /* Snapshot of peers for UI/CLI. Returns count written. */
